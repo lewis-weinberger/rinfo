@@ -2,13 +2,12 @@ use std::error::Error;
 use std::fs;
 
 pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
-    let info = Info::new(config.filename)?;
-
-    println!("{:?}", info);
+    let info = Info::new(&config.filename)?;
 
     Ok(())
 }
 
+#[derive(Debug)]
 pub struct Config {
     pub snapnum: u32,
     pub filename: String,
@@ -21,7 +20,10 @@ impl Config {
             return Err("Incorrect arguments: [SNAPNUM] [QUERY]");
         }
 
-        let snapnum: u32 = args[1].parse().unwrap();
+        let snapnum = match args[1].parse::<u32>() {
+            Ok(num) => num,
+            Err(err) => return Err("[SNAPNUM] must be integer!")
+        };
         let mut filename = String::from("output_");
         let suffix = format!("{:05}/info_{:05}.txt", snapnum, snapnum);
         filename.push_str(&suffix);
@@ -56,32 +58,33 @@ struct Info {
 }
 
 impl Info {
-    fn new(filename: String) -> Result<Info, Box<dyn Error>> {
-        let contents   = fs::read_to_string(filename)?;
+    fn new(filename: &String) -> Result<Info, Box<dyn Error>> {
+        let contents   = fs::read_to_string(&filename)?;
         let mut buffer = Vec::new();
 
         for line in contents.lines() {
             buffer.push(line);
         }
+        println!("Opened: {}", &filename);
 
-        let ncpu: u32         = Info::extract(&buffer[0]).parse().unwrap();
-        let ndim: u32         = Info::extract(&buffer[1]).parse().unwrap();
-        let levelmin: u32     = Info::extract(&buffer[2]).parse().unwrap();
-        let levelmax: u32     = Info::extract(&buffer[3]).parse().unwrap();
-        let ngridmax: u32     = Info::extract(&buffer[4]).parse().unwrap();
-        let nstep_coarse: u32 = Info::extract(&buffer[5]).parse().unwrap();
-        
-        let boxlen: f64   = Info::extract(&buffer[7]).parse().unwrap();
-        let time: f64     = Info::extract(&buffer[8]).parse().unwrap();
-        let aexp: f64     = Info::extract(&buffer[9]).parse().unwrap();
-        let H0: f64       = Info::extract(&buffer[10]).parse().unwrap();
-        let omega_m: f64  = Info::extract(&buffer[11]).parse().unwrap();
-        let omega_l: f64  = Info::extract(&buffer[12]).parse().unwrap();
-        let omega_k: f64  = Info::extract(&buffer[13]).parse().unwrap();
-        let omega_b: f64  = Info::extract(&buffer[14]).parse().unwrap();
-        let unit_l: f64   = Info::extract(&buffer[15]).parse().unwrap();
-        let unit_d: f64   = Info::extract(&buffer[16]).parse().unwrap();
-        let unit_t: f64   = Info::extract(&buffer[17]).parse().unwrap();
+        let ncpu: u32         = Info::extract(buffer[0]).parse()?;
+        let ndim: u32         = Info::extract(buffer[1]).parse()?;
+        let levelmin: u32     = Info::extract(buffer[2]).parse()?;
+        let levelmax: u32     = Info::extract(buffer[3]).parse()?;
+        let ngridmax: u32     = Info::extract(buffer[4]).parse()?;
+        let nstep_coarse: u32 = Info::extract(buffer[5]).parse()?;
+
+        let boxlen: f64   = Info::extract(buffer[7]).parse()?;
+        let time: f64     = Info::extract(buffer[8]).parse()?;
+        let aexp: f64     = Info::extract(buffer[9]).parse()?;
+        let H0: f64       = Info::extract(buffer[10]).parse()?;
+        let omega_m: f64  = Info::extract(buffer[11]).parse()?;
+        let omega_l: f64  = Info::extract(buffer[12]).parse()?;
+        let omega_k: f64  = Info::extract(buffer[13]).parse()?;
+        let omega_b: f64  = Info::extract(buffer[14]).parse()?;
+        let unit_l: f64   = Info::extract(buffer[15]).parse()?;
+        let unit_d: f64   = Info::extract(buffer[16]).parse()?;
+        let unit_t: f64   = Info::extract(buffer[17]).parse()?;
         
         let redshift = Info::find_redshift(aexp);
         let smallh   = H0/100.0;
@@ -112,7 +115,7 @@ impl Info {
     }
 
     fn extract(buf: &str) -> &str {
-        &buf[14..]
+        &buf[14..].trim()
     }
 
     fn find_redshift(aexp: f64) -> f64 {
@@ -120,7 +123,7 @@ impl Info {
     }
 
     fn find_boxsize(unit_l: f64, boxlen: f64) -> f64 {
-        boxlen * unit_l * 3.08 * 10.0f64.powf(24.0)
+        boxlen * unit_l / (3.08 * 10.0f64.powf(24.0))
     }
 
     fn find_Hz(aexp: f64, H0: f64, omega_m: f64, omega_k: f64, omega_l: f64) -> f64 {
