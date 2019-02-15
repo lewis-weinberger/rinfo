@@ -1,0 +1,7 @@
+[package]
+name = "rinfo"
+version = "0.1.0"
+authors = ["lhw28 <lhw28@cam.ac.uk>"]
+edition = "2018"
+
+[dependencies]
