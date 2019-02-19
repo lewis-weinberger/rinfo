@@ -33,20 +33,25 @@ pub struct Config {
 }
 
 impl Config {
-    pub fn new(args: &[String]) -> Result<Config, &'static str> {
-        if args.len() < 3 {
-            print_help();
-            return Err("Incorrect arguments: [SNAPNUM] [QUERY]");
-        }
+    pub fn new(mut args: std::env::Args) -> Result<Config, &'static str> {
+        args.next();
 
-        let snapnum = match args[1].parse::<u32>() {
-            Ok(num) => num,
-            Err(_) => return Err("[SNAPNUM] must be integer!"),
+        let snapnum = match args.next() {
+            Some(arg) => match arg.parse::<u32>() {
+                Ok(num) => num,
+                Err(_) => return Err("[SNAPNUM] must be integer!"),
+            },
+            None => return Err("Incorrect arguments: [SNAPNUM] [QUERY]"),
         };
         let mut filename = String::from("output_");
         let suffix = format!("{:05}/info_{:05}.txt", snapnum, snapnum);
         filename.push_str(&suffix);
-        let query = args[2].clone();
+
+        let query = match args.next() {
+            Some(arg) => arg,
+            None => return Err("Incorrect arguments: [SNAPNUM] [QUERY]"),
+        };
+
         let output = match &query[..] {
             "all" => Output::All,
             "sim" => Output::Sim,
@@ -222,7 +227,7 @@ mod tests {
     #[test]
     fn string_extract() {
         let test_string = String::from("boxlen      =  0.100000000000000E+01");
-        assert_eq!(Info::extract(&test_string), " 0.100000000000000E+01");
+        assert_eq!(Info::extract(&test_string), "0.100000000000000E+01");
     }
 
 }
