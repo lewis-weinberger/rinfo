@@ -10,7 +10,7 @@ pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
         Output::Hubble => info.print_hubble_params(),
         Output::Time => info.print_time_params(),
         Output::Unit => info.print_unit_params(),
-        Output::Help => print_help(),
+        Output::Help => (),
     };
 
     Ok(())
@@ -74,7 +74,7 @@ impl Config {
     }
 }
 
-fn print_help() {
+pub fn print_help() {
     println!("rinfo help:");
     println!("Usage: rinfo [SNAPNUM] [QUERY]");
     println!("SNAPNUM: ramses snapshot number");
